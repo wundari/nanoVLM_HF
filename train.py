@@ -43,6 +43,9 @@ import os
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+os.environ["HTTP_PROXY"] = "http://proxy.nict.go.jp:3128"
+os.environ["HTTPS_PROXY"] = "http://proxy.nict.go.jp:3128"
+
 
 PG_CPU = None
 
