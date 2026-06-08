@@ -1,0 +1,36 @@
+{
+  "os":  "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+  "python":  "CPython 3.14.1",
+  "startedAt":  "2026-06-04T13:23:26.376642Z",
+  "program":  "/home/wundari/nanoVLM_HF_v2/train.py",
+  "codePath":  "train.py",
+  "codePathLocal":  "train.py",
+  "email":  "syal.6cyu@gmail.com",
+  "root":  "/home/wundari/nanoVLM_HF_v2",
+  "host":  "wundari",
+  "executable":  "/home/wundari/VLM/.venv/bin/python3",
+  "cpu_count":  24,
+  "cpu_count_logical":  24,
+  "gpu":  "NVIDIA GeForce RTX 5090",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "244939624448",
+      "used":  "13074718720"
+    }
+  },
+  "memory":  {
+    "total":  "49730060288"
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA GeForce RTX 5090",
+      "memoryTotal":  "34190917632",
+      "cudaCores":  21760,
+      "architecture":  "Blackwell",
+      "uuid":  "GPU-6546df29-c39a-260b-736a-1a5061c45feb"
+    }
+  ],
+  "cudaVersion":  "13.2",
+  "writerId":  "hsx0piu6yy4ydewrfoahl28070jjftss"
+}

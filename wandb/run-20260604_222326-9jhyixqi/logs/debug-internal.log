@@ -1,0 +1,37 @@
+{"time":"2026-06-04T22:23:26.616404038+09:00","level":"INFO","msg":"stream: starting","core version":"0.23.1"}
+{"time":"2026-06-04T22:23:27.034086952+09:00","level":"INFO","msg":"stream: created new stream","id":"9jhyixqi"}
+{"time":"2026-06-04T22:23:27.034163754+09:00","level":"INFO","msg":"handler: started","stream_id":"9jhyixqi"}
+{"time":"2026-06-04T22:23:27.034450476+09:00","level":"INFO","msg":"stream: started","id":"9jhyixqi"}
+{"time":"2026-06-04T22:23:27.034910167+09:00","level":"INFO","msg":"sender: started","stream_id":"9jhyixqi"}
+{"time":"2026-06-04T22:23:27.034936114+09:00","level":"INFO","msg":"writer: started","stream_id":"9jhyixqi"}
+{"time":"2026-06-05T11:57:13.552349006+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: network is unreachable"}
+{"time":"2026-06-05T11:57:15.98716835+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp: lookup api.wandb.ai on 127.0.0.53:53: server misbehaving"}
+{"time":"2026-06-05T11:57:20.084767019+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp: lookup api.wandb.ai on 127.0.0.53:53: server misbehaving"}
+{"time":"2026-06-05T11:57:29.155828926+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp: lookup api.wandb.ai on 127.0.0.53:53: server misbehaving"}
+{"time":"2026-06-05T11:57:46.182512103+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp: lookup api.wandb.ai on 127.0.0.53:53: server misbehaving"}
+{"time":"2026-06-05T12:06:06.666947079+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp: lookup api.wandb.ai on 127.0.0.53:53: server misbehaving"}
+{"time":"2026-06-05T12:08:25.296140879+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: network is unreachable"}
+{"time":"2026-06-05T13:10:46.16546981+09:00","level":"INFO","msg":"stream: closing","id":"9jhyixqi"}
+{"time":"2026-06-05T13:10:51.319519396+09:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2026-06-05T13:13:24.688233445+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": read tcp 192.168.40.212:45820->34.8.250.101:443: read: connection timed out"}
+{"time":"2026-06-05T13:15:39.856305487+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T13:17:59.120311605+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T13:20:22.480286567+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T13:22:54.032227608+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T13:25:46.065299164+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T13:28:58.576288327+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T13:32:11.088246603+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T13:35:23.60123602+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T13:38:36.112256693+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T13:41:48.624145272+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T13:45:01.136327204+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T13:48:13.648239741+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T13:51:26.160175396+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T13:54:38.67228116+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T13:57:51.184295942+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T14:01:03.696228817+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T14:04:16.208419218+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: connection timed out"}
+{"time":"2026-06-05T14:07:28.721128308+09:00","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/6cyu/nanoVLM/9jhyixqi/file_stream\": dial tcp 34.8.250.101:443: connect: network is unreachable"}
+{"time":"2026-06-05T14:08:29.135373103+09:00","level":"INFO","msg":"handler: closed","stream_id":"9jhyixqi"}
+{"time":"2026-06-05T14:08:29.135432053+09:00","level":"INFO","msg":"sender: closed","stream_id":"9jhyixqi"}
+{"time":"2026-06-05T14:08:29.135437581+09:00","level":"INFO","msg":"stream: closed","id":"9jhyixqi"}

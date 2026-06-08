@@ -1,0 +1,53 @@
+Successfully loaded google/siglip2-base-patch16-512 weights from safetensors. Model has 86,433,024 parameters.
+Extending token embeddings from torch.Size([49152, 960]) to torch.Size([49218, 960])
+Initialized 66 new token embeddings
+Successfully loaded HuggingFaceTB/SmolLM2-360M-Instruct weights from safetensors. Model has 361,884,480 parameters.
+Using device: cuda
+Starting training loop
+Starting evaluation
+Evaluated 65 batches
+Submitting evaluation job: sbatch eval.slurm checkpoints/nanoVLM_siglip2-base-patch16-512_2048_mp4_SmolLM2-360M-Instruct_1xGPU_bs8_40000_lr_vision_5e-05-language_5e-05-0.00512_0604-222325/step_0 0 nanoVLM_siglip2-base-patch16-512_2048_mp4_SmolLM2-360M-Instruct_1xGPU_bs8_40000_lr_vision_5e-05-language_5e-05-0.00512_0604-222325 None mmstar,mmmu_val,ocrbench,textvqa_val,docvqa_val,scienceqa,mme,infovqa_val,chartqa 64
+Step: 0/40000, Val Loss: 1.4786, Tokens/s: 5103.85
+Starting evaluation
+Evaluated 65 batches
+Step: 5000/40000, Val Loss: 0.7465, Tokens/s: 6585.04
+Starting evaluation
+Evaluated 65 batches
+Submitting evaluation job: sbatch eval.slurm checkpoints/nanoVLM_siglip2-base-patch16-512_2048_mp4_SmolLM2-360M-Instruct_1xGPU_bs8_40000_lr_vision_5e-05-language_5e-05-0.00512_0604-222325/step_10000 10000 nanoVLM_siglip2-base-patch16-512_2048_mp4_SmolLM2-360M-Instruct_1xGPU_bs8_40000_lr_vision_5e-05-language_5e-05-0.00512_0604-222325 None mmstar,mmmu_val,ocrbench,textvqa_val,docvqa_val,scienceqa,mme,infovqa_val,chartqa 64
+Step: 10000/40000, Val Loss: 0.7780, Tokens/s: 6217.84
+Starting evaluation
+Evaluated 65 batches
+Step: 15000/40000, Val Loss: 0.8697, Tokens/s: 7899.14
+Starting evaluation
+Evaluated 65 batches
+Submitting evaluation job: sbatch eval.slurm checkpoints/nanoVLM_siglip2-base-patch16-512_2048_mp4_SmolLM2-360M-Instruct_1xGPU_bs8_40000_lr_vision_5e-05-language_5e-05-0.00512_0604-222325/step_20000 20000 nanoVLM_siglip2-base-patch16-512_2048_mp4_SmolLM2-360M-Instruct_1xGPU_bs8_40000_lr_vision_5e-05-language_5e-05-0.00512_0604-222325 None mmstar,mmmu_val,ocrbench,textvqa_val,docvqa_val,scienceqa,mme,infovqa_val,chartqa 64
+Step: 20000/40000, Val Loss: 0.8487, Tokens/s: 6972.73
+Starting evaluation
+Evaluated 65 batches
+Step: 25000/40000, Val Loss: 0.9101, Tokens/s: 6134.19
+Traceback (most recent call last):
+  File "/home/wundari/nanoVLM_HF_v2/train.py", line 887, in <module>
+    main()
+    ~~~~^^
+  File "/home/wundari/nanoVLM_HF_v2/train.py", line 880, in main
+    train(cfg_train, cfg_vlm)
+    ~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/home/wundari/nanoVLM_HF_v2/train.py", line 512, in train
+    _, loss = model(
+              ~~~~~^
+        input_ids, images, attention_mask=attention_mask, targets=labels
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/wundari/VLM/.venv/lib/python3.14/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/wundari/VLM/.venv/lib/python3.14/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/wundari/nanoVLM_HF_v2/models/vision_language_model.py", line 120, in forward
+    logits, _ = self.decoder(token_embd, attention_mask=attention_mask)
+                ^^^^^^^^^^^^
+  File "/home/wundari/VLM/.venv/lib/python3.14/site-packages/torch/nn/modules/module.py", line 1955, in __getattr__
+    def __getattr__(self, name: str) -> Union[Tensor, "Module"]:
+
+KeyboardInterrupt
