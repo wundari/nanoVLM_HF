@@ -52,7 +52,7 @@ class VLMConfig:
     mp_pixel_shuffle_factor: int = 4
     mp_image_token_length: int = 64
 
-    max_img_size: int = 2048
+    max_img_size: int = 1024  # 2048
     resize_to_max_side_len: bool = True
 
     # VLM config
@@ -137,7 +137,7 @@ class TrainConfig:
     lr_vision_backbone: float = 5e-5  # 0.0005 #
     lr_language_backbone: float = 5e-5  # 0
     val_size: int = 50000
-    batch_size: int = 2
+    batch_size: int = 1
     gradient_accumulation_steps: int = 8
     max_grad_norm: float = 1.0
     eval_in_epochs: bool = True
@@ -151,11 +151,16 @@ class TrainConfig:
     resume_from_vlm_checkpoint: bool = (
         False  # Indicate if the training should be resumed from a checkpoint of the whole VLM or you want to start from scratch
     )
+
+    dataset_name: str = "FineVision"
+    train_dataset_path: str = f"../Dataset/HuggingFace/{dataset_name}"
+    train_dataset_name: tuple[str, ...] = ("all",)
+
     # train_dataset_path: str = "HuggingFaceM4/FineVision_concat_shuffled_2"
-    train_dataset_path: str = "HuggingFaceM4/FineVision"
-    train_dataset_name: tuple[str, ...] = (
-        "allava_laion",  # "default",
-    )  # ('allava_laion', 'allava_vflan', 'cambrian(filtered)_processed', 'LLaVA_Instruct_150K', 'mmevol', 'sharegpt4o', 'sharegpt4v(coco)', 'sharegpt4v(knowledge)', 'sharegpt4v(llava)', 'sharegpt4v(sam)') # 'vision_flan(filtered)', 'lvis_instruct4v',
+    # train_dataset_path: str = "HuggingFaceM4/FineVisionMax"
+    # train_dataset_name: tuple[str, ...] = (
+    #     "default",  # "default",
+    # )  # ('allava_laion', 'allava_vflan', 'cambrian(filtered)_processed', 'LLaVA_Instruct_150K', 'mmevol', 'sharegpt4o', 'sharegpt4v(coco)', 'sharegpt4v(knowledge)', 'sharegpt4v(llava)', 'sharegpt4v(sam)') # 'vision_flan(filtered)', 'lvis_instruct4v',
 
     # train_dataset_path: str = "HuggingFaceM4/the_cauldron"
     # train_dataset_name: tuple[str, ...] = ("tqa",)
@@ -167,7 +172,7 @@ class TrainConfig:
     formatting_min_rating: int = 1
     wandb_entity: str = "6cyu"  # Indicate the entity to log to in wandb
     log_wandb: bool = True
-    use_lmms_eval: bool = True  # Use lmms-eval for evaluation
+    use_lmms_eval: bool = False  # Use lmms-eval for evaluation
     lmms_eval_tasks: str = (
         "mmstar,mmmu_val,ocrbench,textvqa_val,docvqa_val,scienceqa,mme,infovqa_val,chartqa"  # Pass additional task as one string, seperated by commas without spaces (e.g. 'mmstar,mmmu,ocrbench')
     )

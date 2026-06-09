@@ -9,9 +9,11 @@ import contextlib
 import subprocess
 import json
 import re
+import glob
 
 from statistics import mean
 from dataclasses import asdict
+from pathlib import Path
 
 import torch
 import torch.distributed as dist
@@ -130,6 +132,9 @@ def seed_worker(worker_id):
 
 # %% set up dataloader
 
+# cfg_train = TrainConfig()
+# cfg_vlm = VLMConfig()
+
 
 def build_dataloaders(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
 
@@ -147,54 +152,99 @@ def build_dataloaders(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
         resize_to_max_side_len=cfg_vlm.resize_to_max_side_len,
     )
 
+    ## load local dataset
+    # detect if train_dataset_path is a local directory containing parquets files
     dataset_names_to_load = cfg_train.train_dataset_name
-    if "shards" in cfg_train.train_dataset_name:
-        print("Loading shards")
-        total_shards = 56
-        dataset_names_to_load = [
-            cfg_train.train_dataset_path + f"/shard_{i}" for i in range(total_shards)
-        ]
+    local_parquet_files = []
     if "all" in dataset_names_to_load:
-        dataset_names_to_load = get_dataset_config_names(cfg_train.train_dataset_path)
-
-    # load and combine all training datasets
-    combined_train_data = []
-    for dataset_name in dataset_names_to_load:
-        print(f"Loading dataset: {dataset_name}")
-
-        if "shard_" in dataset_name:
-            try:
-                dataset_train = load_from_disk(dataset_name)
-                combined_train_data.append(dataset_train)
-                continue
-            except Exception as e:
-                print(
-                    f"Warning: failed to load dataset shard {dataset_name} from {cfg_train.train_dataset_path}. Error: {e}"
-                )
-                continue
-        try:
-            dataset_train = load_dataset(
-                cfg_train.train_dataset_path,
-                dataset_name,
-                streaming=cfg_train.stream_dataset,
-                on_bad_files="warn",
-            )["train"]
-            if cfg_train.stream_dataset:
-                next(iter(dataset_train))  # check if dataset is loaded correctly
-            combined_train_data.append(dataset_train)
-        except Exception as e:
-            if is_master():
-                print(
-                    f"Warning: Failed to load dataset config {dataset_name} from {cfg_train.train_dataset_path}. Error: {e}"
-                )
-            continue
-
-    if not combined_train_data:
-        raise ValueError(
-            "No valid datasets were loaded. Please check your dataset path and configurations."
+        complete_names = get_dataset_config_names(
+            f"HuggingFaceM4/{cfg_train.dataset_name}"
         )
+        dataset_names_to_load = [
+            p.name
+            for p in Path(cfg_train.train_dataset_path).iterdir()
+            if (p.is_dir() and p.name in complete_names)
+        ]
+    for dataset_name in dataset_names_to_load:
+        parquet_files = sorted(
+            glob.glob(
+                os.path.join(cfg_train.train_dataset_path, dataset_name, "*.parquet")
+            )
+        )
+        local_parquet_files.append(parquet_files)
 
-    dataset_train = concatenate_datasets(combined_train_data)
+    local_parquet_files = sorted(
+        [name for subdataset in local_parquet_files for name in subdataset]
+    )
+
+    ## local dataset
+    if local_parquet_files:
+        print(f"Detected local parquet files in {cfg_train.train_dataset_path}")
+        print(
+            f"Found {len(local_parquet_files)} parquet shards. Loading from local drive..."
+        )
+        dataset_train = load_dataset(
+            "parquet",
+            data_files={"train": local_parquet_files},
+            split="train",
+            num_proc=16,
+        )
+        print(f"Loaded local dataset with {len(dataset_train)} samples.")
+
+    ## online dataset
+    else:
+        dataset_names_to_load = cfg_train.train_dataset_name
+        if "shards" in cfg_train.train_dataset_name:
+            print("Loading shards")
+            total_shards = 56
+            dataset_names_to_load = [
+                cfg_train.train_dataset_path + f"/shard_{i}"
+                for i in range(total_shards)
+            ]
+        if "all" in dataset_names_to_load:
+            dataset_names_to_load = get_dataset_config_names(
+                cfg_train.train_dataset_path
+            )
+
+        # load and combine all training datasets
+        combined_train_data = []
+        for dataset_name in dataset_names_to_load:
+            print(f"Loading dataset: {dataset_name}")
+
+            if "shard_" in dataset_name:
+                try:
+                    dataset_train = load_from_disk(dataset_name)
+                    combined_train_data.append(dataset_train)
+                    continue
+                except Exception as e:
+                    print(
+                        f"Warning: failed to load dataset shard {dataset_name} from {cfg_train.train_dataset_path}. Error: {e}"
+                    )
+                    continue
+            try:
+                dataset_train = load_dataset(
+                    cfg_train.train_dataset_path,
+                    dataset_name,
+                    streaming=cfg_train.stream_dataset,
+                    on_bad_files="warn",
+                    num_proc=4 if not cfg_train.stream_dataset else None,
+                )["train"]
+                if cfg_train.stream_dataset:
+                    next(iter(dataset_train))  # check if dataset is loaded correctly
+                combined_train_data.append(dataset_train)
+            except Exception as e:
+                if is_master():
+                    print(
+                        f"Warning: Failed to load dataset config {dataset_name} from {cfg_train.train_dataset_path}. Error: {e}"
+                    )
+                continue
+
+        if not combined_train_data:
+            raise ValueError(
+                "No valid datasets were loaded. Please check your dataset path and configurations."
+            )
+
+        dataset_train = concatenate_datasets(combined_train_data)
 
     if not cfg_train.stream_dataset:
         # Shuffle the training dataset,
