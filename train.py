@@ -18,7 +18,7 @@ from pathlib import Path
 import torch
 import torch.distributed as dist
 import torch.optim as optim
-from torch.utils.data import DataLoader, DistributedSampler
+from torch.utils.data import DataLoader
 from torch.nn.parallel import DistributedDataParallel
 
 from models.vision_language_model import VisionLanguageModel
@@ -152,33 +152,35 @@ def build_dataloaders(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
         resize_to_max_side_len=cfg_vlm.resize_to_max_side_len,
     )
 
-    ## load local dataset
-    # detect if train_dataset_path is a local directory containing parquets files
-    dataset_names_to_load = cfg_train.train_dataset_name
-    local_parquet_files = []
-    if "all" in dataset_names_to_load:
-        complete_names = get_dataset_config_names(
-            f"HuggingFaceM4/{cfg_train.dataset_name}"
-        )
-        dataset_names_to_load = [
-            p.name
-            for p in Path(cfg_train.train_dataset_path).iterdir()
-            if (p.is_dir() and p.name in complete_names)
-        ]
-    for dataset_name in dataset_names_to_load:
-        parquet_files = sorted(
-            glob.glob(
-                os.path.join(cfg_train.train_dataset_path, dataset_name, "*.parquet")
+    if cfg_train.use_local_dataset:
+        ## load local dataset
+        # detect if train_dataset_path is a local directory containing parquets files
+        dataset_names_to_load = cfg_train.train_dataset_name
+        local_parquet_files = []
+        if "all" in dataset_names_to_load:
+            complete_names = get_dataset_config_names(
+                f"HuggingFaceM4/{cfg_train.dataset_name}"
             )
+            dataset_names_to_load = [
+                p.name
+                for p in Path(cfg_train.train_dataset_path).iterdir()
+                if (p.is_dir() and p.name in complete_names)
+            ]
+        for dataset_name in dataset_names_to_load:
+            parquet_files = sorted(
+                glob.glob(
+                    os.path.join(
+                        cfg_train.train_dataset_path, dataset_name, "*.parquet"
+                    )
+                )
+            )
+            local_parquet_files.append(parquet_files)
+
+        local_parquet_files = sorted(
+            [name for subdataset in local_parquet_files for name in subdataset]
         )
-        local_parquet_files.append(parquet_files)
 
-    local_parquet_files = sorted(
-        [name for subdataset in local_parquet_files for name in subdataset]
-    )
-
-    ## local dataset
-    if local_parquet_files:
+        ## local dataset
         print(f"Detected local parquet files in {cfg_train.train_dataset_path}")
         print(
             f"Found {len(local_parquet_files)} parquet shards. Loading from local drive..."
@@ -187,7 +189,8 @@ def build_dataloaders(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
             "parquet",
             data_files={"train": local_parquet_files},
             split="train",
-            num_proc=16,
+            num_proc=4,
+            keep_in_memory=False,
         )
         print(f"Loaded local dataset with {len(dataset_train)} samples.")
 
@@ -485,12 +488,12 @@ def train(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
     optimizer = optim.AdamW(param_groups)
     all_params = [p for group in optimizer.param_groups for p in group["params"]]
 
-    device = torch.device("cuda")
+    device = torch.device(cfg_train.device)
     print(f"Using device: {device}")
     model.to(device)
 
     if cfg_train.compile:
-        model = torch.compile(model, mode=cfg_train.compile_mode)
+        model = torch.compile(model, mode=cfg_train.compile_mode, dynamic=False)
     if is_dist():
         print("Wrapping model for DDP")
         model = wrap_model(model)
@@ -556,9 +559,7 @@ def train(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
             fw_bw_start = time.time()
             autocast_context = torch.autocast(
                 device_type=device.type,
-                dtype=(
-                    torch.bfloat16 if device.type in ["cuda", "cpu"] else torch.float16
-                ),
+                dtype=torch.bfloat16,
             )
             with autocast_context:
                 with context:
@@ -644,7 +645,7 @@ def train(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
             ):
                 print("Starting evaluation")
                 model.eval()
-                if device == "cuda":
+                if device.type == "cuda":
                     torch.cuda.empty_cache()
                 with torch.no_grad():
                     total_val_loss = 0
@@ -925,10 +926,15 @@ def main():
 
     if is_master():
         print("--- Starting Training ---")
-        print("--- VLM Config ---")
-        print(cfg_vlm)
         print("--- Train Config ---")
-        print(cfg_train)
+        print(f"Dataset: {cfg_train.dataset_name}: {cfg_train.train_dataset_path}")
+        print(f"Subdataset: {cfg_train.train_dataset_name}")
+        print(f"Batch size: {cfg_train.batch_size}")
+
+        if cfg_train.compile:
+            print(f"Compile: {cfg_train.compile_mode}\n")
+        else:
+            print("Non-compiled\n")
 
     train(cfg_train, cfg_vlm)
 

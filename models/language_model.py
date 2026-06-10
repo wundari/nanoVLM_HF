@@ -1,11 +1,12 @@
 # %%
 from typing import Any
 
-import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
+
+# from torch.nn.attention import SDPBackend, sdpa_kernel
 
 
 from jaxtyping import Float, Int
@@ -396,7 +397,7 @@ class LM_Block(nn.Module):
         cos: Float[Tensor, "B T head_dim"],
         sin: Float[Tensor, "B T head_dim"],
         attention_mask: Float[Tensor, "B total_lv_len"] | None = None,
-        block_kv_cache: dict = None,
+        block_kv_cache: dict | None = None,
     ) -> tuple[Float[Tensor, "B T C"], dict]:
         """
         Forward pass of the Transformer block.
@@ -462,7 +463,7 @@ class LanguageModel(nn.Module):
         self,
         x: Float[Tensor, "B T C"] | Int[Tensor, "B T"],
         attention_mask: Float[Tensor, "B total_lv_len"] | None = None,
-        kv_cache: dict = None,
+        kv_cache: dict | None = None,
         start_pos: int = 0,
     ):
         """

@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
+from torch.nn.attention import sdpa_kernel, SDPBackend
+
 from configs.config import VLMConfig
 from jaxtyping import Float
 
@@ -103,14 +105,15 @@ class ViTMultiHeadAttention(nn.Module):
         )  # [B, n_heads, T, head_dim]
 
         # compute attention scores
-        y = torch.nn.functional.scaled_dot_product_attention(
-            q,
-            k,
-            v,
-            attn_mask=None,
-            dropout_p=self.dropout if self.training else 0.0,
-            is_causal=False,  # ViT attention is bidirectional
-        )  # [B, n_heads, T, head_dim]
+        with sdpa_kernel(SDPBackend.FLASH_ATTENTION):
+            y = torch.nn.functional.scaled_dot_product_attention(
+                q,
+                k,
+                v,
+                attn_mask=None,
+                dropout_p=self.dropout if self.training else 0.0,
+                is_causal=False,  # ViT attention is bidirectional
+            )  # [B, n_heads, T, head_dim]
 
         y = y.transpose(1, 2).contiguous().view(B, T, C)  # [B, T, C]
         y = self.out_proj(y)

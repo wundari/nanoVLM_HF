@@ -133,6 +133,7 @@ class VLMConfig:
 
 @dataclass
 class TrainConfig:
+    device: str = "cuda"  # "cuda", "cpu", or "mps"
     lr_mp: float = 0.00512
     lr_vision_backbone: float = 5e-5  # 0.0005 #
     lr_language_backbone: float = 5e-5  # 0
@@ -147,14 +148,23 @@ class TrainConfig:
     max_images_per_example: int = 4
     max_images_per_knapsack: int = 18
     max_sample_length: int = 4096
-    compile: bool = False
+    compile: bool = True
+    compile_mode: str = (
+        "max-autotune-no-cudagraphs"
+        # "default", "reduce-overhead", "max-autotune", "max-autotune-no-cudagraphs"
+    )
     resume_from_vlm_checkpoint: bool = (
         False  # Indicate if the training should be resumed from a checkpoint of the whole VLM or you want to start from scratch
     )
 
-    dataset_name: str = "FineVision"
-    train_dataset_path: str = f"../Dataset/HuggingFace/{dataset_name}"
-    train_dataset_name: tuple[str, ...] = ("all",)
+    use_local_dataset: bool = False
+    dataset_name: str = "FineVisionMax"
+    if use_local_dataset:
+        train_dataset_path: str = f"../Dataset/HuggingFace/{dataset_name}"
+        train_dataset_name: tuple[str, ...] = ("all",)
+    else:
+        train_dataset_path: str = f"HuggingFaceM4/{dataset_name}"
+        train_dataset_name: tuple[str, ...] = ("default",)
 
     # train_dataset_path: str = "HuggingFaceM4/FineVision_concat_shuffled_2"
     # train_dataset_path: str = "HuggingFaceM4/FineVisionMax"
@@ -164,15 +174,14 @@ class TrainConfig:
 
     # train_dataset_path: str = "HuggingFaceM4/the_cauldron"
     # train_dataset_name: tuple[str, ...] = ("tqa",)
-
-    stream_dataset: bool = True
+    stream_dataset: bool = False if use_local_dataset else True
     relevance_min_rating: int = 1
     image_correspondence_min_rating: int = 1
     visual_dependency_min_rating: int = 1
     formatting_min_rating: int = 1
     wandb_entity: str = "6cyu"  # Indicate the entity to log to in wandb
     log_wandb: bool = True
-    use_lmms_eval: bool = False  # Use lmms-eval for evaluation
+    use_lmms_eval: bool = True  # Use lmms-eval for evaluation
     lmms_eval_tasks: str = (
         "mmstar,mmmu_val,ocrbench,textvqa_val,docvqa_val,scienceqa,mme,infovqa_val,chartqa"  # Pass additional task as one string, seperated by commas without spaces (e.g. 'mmstar,mmmu,ocrbench')
     )
