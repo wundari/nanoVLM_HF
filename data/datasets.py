@@ -128,16 +128,15 @@ class BaseDataset(Dataset):
         return processed_images, splitted_image_counts
 
     def _prepare_inputs_and_loss_mask(self, messages):
+
         conv_ids = self.tokenizer.apply_chat_template(
             messages,
             tokenize=True,
             add_special_tokens=False,
             return_dict=True,
         )
-        n_tokens = len(conv_ids["input_ids"])
-        if n_tokens > self.tokenizer.model_max_length:
-            print(f"n_tokens = {n_tokens} > {self.tokenizer.model_max_length}")
-        mask = [0] * n_tokens
+
+        mask = [0] * len(conv_ids["input_ids"])
 
         # Locate each assistant turn and flip its mask to 1
         cursor = 0

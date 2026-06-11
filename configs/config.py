@@ -52,7 +52,7 @@ class VLMConfig:
     mp_pixel_shuffle_factor: int = 4
     mp_image_token_length: int = 64
 
-    max_img_size: int = 1024  # 2048
+    max_img_size: int = 512  # 2048
     resize_to_max_side_len: bool = True
 
     # VLM config
@@ -138,11 +138,14 @@ class TrainConfig:
     lr_vision_backbone: float = 5e-5  # 0.0005 #
     lr_language_backbone: float = 5e-5  # 0
     val_size: int = 50000
-    batch_size: int = 1
+    batch_size: int = 2
     gradient_accumulation_steps: int = 8
     max_grad_norm: float = 1.0
-    eval_in_epochs: bool = True
-    eval_interval: int = 5000  # 500
+    eval_in_epochs: bool = True  # Whether to evaluate every eval_interval
+    eval_interval: int = 4000  # the number of steps between evaluations
+    eval_iteration: int = (
+        64  # the number of iterations to evaluate, multiplication of gradient_accumulation_steps
+    )
     stats_log_interval: int = 100
     max_training_steps: int = 40000
     max_images_per_example: int = 4
@@ -150,15 +153,15 @@ class TrainConfig:
     max_sample_length: int = 4096
     compile: bool = True
     compile_mode: str = (
-        "max-autotune-no-cudagraphs"
+        "default"
         # "default", "reduce-overhead", "max-autotune", "max-autotune-no-cudagraphs"
     )
     resume_from_vlm_checkpoint: bool = (
         False  # Indicate if the training should be resumed from a checkpoint of the whole VLM or you want to start from scratch
     )
 
-    use_local_dataset: bool = False
-    dataset_name: str = "FineVisionMax"
+    use_local_dataset: bool = True
+    dataset_name: str = "FineVision"
     if use_local_dataset:
         train_dataset_path: str = f"../Dataset/HuggingFace/{dataset_name}"
         train_dataset_name: tuple[str, ...] = ("all",)
