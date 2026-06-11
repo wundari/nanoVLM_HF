@@ -260,7 +260,7 @@ def build_dataloaders(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
             num_shards=get_world_size(), index=get_rank()
         )
 
-    val_size = int(cfg_train.val_size / get_world_size())
+    val_size = int(cfg_train.val_ratio * len(dataset_train) / get_world_size())
     print(f"Val size per GPU: {val_size}")
 
     if cfg_train.stream_dataset:

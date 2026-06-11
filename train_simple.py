@@ -130,6 +130,27 @@ def seed_worker(worker_id):
     random.seed(worker_seed)
 
 
+def plot_loss_curves(losses_train, losses_val):
+    val_steps = range(0, len(losses_train), len(losses_train) // len(losses_val))
+
+    plt.figure(figsize=(9, 5), dpi=150)
+
+    plt.plot(losses_train, label="Train Loss", linewidth=2.2, color="#2563eb")
+    plt.plot(
+        val_steps, losses_val, label="Validation Loss", linewidth=2.2, color="#dc2626"
+    )
+
+    plt.title("Learning Curves", fontsize=15, weight="bold")
+    plt.xlabel("Step", fontsize=12)
+    plt.ylabel("Loss", fontsize=12)
+    plt.grid(True, linestyle="--", linewidth=0.6, alpha=0.35)
+    plt.legend(frameon=True, fontsize=10)
+    plt.tight_layout()
+
+    plt.savefig("loss_curves.png", bbox_inches="tight")
+    plt.close()
+
+
 # %% set up dataloader
 
 # cfg_train = TrainConfig()
@@ -230,7 +251,6 @@ def build_dataloaders(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
                     dataset_name,
                     streaming=cfg_train.stream_dataset,
                     on_bad_files="warn",
-                    num_proc=4 if not cfg_train.stream_dataset else None,
                 )["train"]
                 if cfg_train.stream_dataset:
                     next(iter(dataset_train))  # check if dataset is loaded correctly
@@ -254,15 +274,16 @@ def build_dataloaders(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
         # so train and val get equal contributions from all concatenated datasets
         dataset_train = dataset_train.shuffle(seed=0)
 
-    val_size = int(cfg_train.val_size)
-    print(f"Val size per GPU: {val_size}")
+    print(f"Val size per GPU: {cfg_train.val_size}")
 
     if cfg_train.stream_dataset:
-        dataset_val = dataset_train.take(val_size)
-        dataset_train = dataset_train.skip(val_size)
+        dataset_val = dataset_train.take(cfg_train.val_size)
+        dataset_train = dataset_train.skip(cfg_train.val_size)
     else:
-        dataset_val = dataset_train.select(range(val_size))
-        dataset_train = dataset_train.select(range(val_size, len(dataset_train)))
+        dataset_val = dataset_train.select(range(cfg_train.val_size))
+        dataset_train = dataset_train.select(
+            range(cfg_train.val_size, len(dataset_train))
+        )
 
     dataset_vqa_train = VQADataset(
         dataset_train,
@@ -450,27 +471,20 @@ def train(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
     losses_val = []
     best_val_loss = float("inf")
     best_model_path = None
-    logged_eval_steps = set()
     global_step = 0
     epoch = 0
-
-    # training stats accumulator
-    accumulated_stats = {
-        "tokens_per_second": [],
-        "data_load_time": [],
-        "fw_bw_time": [],
-        "post_process_time": [],
-        "images_per_sample": [],
-    }
 
     while global_step < cfg_train.max_training_steps:
         epoch += 1
         epoch_start_time = time.time()
         model.train()
-        total_train_loss = 0
         total_tokens_processed = 0
         optimizer.zero_grad()
-        data_load_start = time.time()
+
+        autocast_context = torch.autocast(
+            device_type=device.type,
+            dtype=torch.bfloat16,
+        )
 
         print("Starting training loop")
         for i, batch in enumerate(
@@ -491,13 +505,7 @@ def train(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
             attention_mask = batch["attention_mask"].to(
                 device
             )  # [dataloader_batch_size, max_seq_length=VLMConfig.lm_max_length]
-            data_load_time = time.time() - data_load_start
 
-            fw_bw_start = time.time()
-            autocast_context = torch.autocast(
-                device_type=device.type,
-                dtype=torch.bfloat16,
-            )
             with autocast_context:
                 _, loss = model(
                     input_ids, images, attention_mask=attention_mask, targets=labels
@@ -507,9 +515,6 @@ def train(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
                 loss = loss / cfg_train.gradient_accumulation_steps
 
             loss.backward()
-
-            fw_bw_time = time.time() - fw_bw_start
-            post_process_start = time.time()
 
             if is_update_step:
                 if cfg_train.max_grad_norm is not None:
@@ -552,27 +557,16 @@ def train(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
             batch_loss = loss.item()
             if cfg_train.gradient_accumulation_steps > 1:
                 batch_loss = batch_loss * cfg_train.gradient_accumulation_steps
-            total_train_loss += batch_loss
             losses_train.append(batch_loss)
 
             num_tokens = torch.sum(
                 attention_mask
             ).item()  # Sum of attention mask gives number of tokens
             total_tokens_processed += num_tokens
-            post_process_time = time.time() - post_process_start
-
-            images_per_sample = [len(image_pack) for image_pack in images]
 
             batch_end_time = time.time()
             batch_duration = batch_end_time - batch_start_time
             tokens_per_second = num_tokens / batch_duration
-
-            # Accumulate training stats
-            accumulated_stats["tokens_per_second"].append(tokens_per_second)
-            accumulated_stats["data_load_time"].append(data_load_time)
-            accumulated_stats["fw_bw_time"].append(fw_bw_time)
-            accumulated_stats["post_process_time"].append(post_process_time)
-            accumulated_stats["images_per_sample"].extend(images_per_sample)
 
             ## evaluation
             if (
@@ -580,7 +574,7 @@ def train(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
                 and (global_step + 1) % cfg_train.eval_interval == 0
                 and is_update_step
             ):
-                print("Starting evaluation")
+                print("### Starting evaluation ###")
                 model.eval()
                 torch.cuda.empty_cache()  # clear GPU cache
 
@@ -588,8 +582,11 @@ def train(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
                 val_batches = 0
                 with torch.no_grad():
                     for batch in synchronized_dataloader_step(iter_val_loader, False):
-                        if val_batches > cfg_train.eval_iteration:
-                            print(f"Evaluated {val_batches + 1} batches")
+                        if (
+                            val_batches % cfg_train.eval_iteration == 0
+                            and val_batches > 0
+                        ):
+                            print(f"Evaluated {val_batches} batches")
                             break
 
                         images = batch["images"]
@@ -614,23 +611,21 @@ def train(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
                     )
                     losses_val.append(avg_val_loss)
 
-                    checkpoint_path_step = ""
-                    if is_master():
-                        # Save a checkpoint for this evaluation step
-                        checkpoint_path_step = os.path.join(
-                            cfg_vlm.vlm_checkpoint_path, run_name, f"step_{global_step}"
-                        )
-                        save_model = (
-                            model.module if is_dist() else model
-                        )  # unwrap the model for saving if DDP
-                        save_model.save_pretrained(save_directory=checkpoint_path_step)
+                    # Save a checkpoint for this evaluation step
+                    checkpoint_path_step = os.path.join(
+                        cfg_vlm.vlm_checkpoint_path, run_name, f"step_{global_step}"
+                    )
+                    model.save_pretrained(save_directory=checkpoint_path_step)
 
                     if avg_val_loss < best_val_loss:
                         best_val_loss = avg_val_loss
                         best_model_path = checkpoint_path_step
 
                     print(
-                        f"Epoch: {epoch}, Step: {global_step + 1}/{cfg_train.max_training_steps}, Val Loss: {avg_val_loss:.4f}, Tokens/s: {tokens_per_second:.2f}"
+                        f"Evaluation mode | "
+                        + f"Epoch: {epoch}, Step: {global_step + 1} / {cfg_train.max_training_steps} | "
+                        + f"Train/Val Loss: {batch_loss:.4f} / {avg_val_loss:.4f} | "
+                        + f"Tokens/s: {tokens_per_second:.2f}"
                     )
 
                 model.train()
@@ -640,10 +635,9 @@ def train(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
                 global_step += 1
                 if global_step >= cfg_train.max_training_steps:
                     break
-            data_load_start = time.time()
 
+        # reset train_loader
         iter_train_loader = iter(train_loader)
-        avg_train_loss = total_train_loss / i
 
         epoch_end_time = time.time()
         epoch_duration = epoch_end_time - epoch_start_time
@@ -651,7 +645,11 @@ def train(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
         epoch_tokens_per_second = total_tokens_processed / epoch_duration
 
         print(
-            f"Epoch: {epoch}, Step: {global_step + 1}/{cfg_train.max_training_steps}, Train Loss: {avg_train_loss:.4f} | Time: {epoch_duration:.2f}s | T/s: {epoch_tokens_per_second:.2f}"
+            f"Finished 1 epoch | "
+            + f"Epoch: {epoch}, Step: {global_step + 1} / {cfg_train.max_training_steps} | "
+            + f"Train/Val Loss: {losses_train[-1]:.4f} / {losses_val[-1]:.4f} | "
+            + f"Time: {epoch_duration:.2f}s | "
+            + f"Tokens/s: {epoch_tokens_per_second:.2f}"
         )
 
     # Summary Statistics
@@ -681,13 +679,8 @@ def train(cfg_train: TrainConfig, cfg_vlm: VLMConfig):
     with open("losses.json", "w") as f:
         json.dump({"train": losses_train, "val": losses_val}, f)
 
-    # plot the training and validation loss curves
-    plt.plot(losses_train, label="Train Loss")
-    plt.plot(losses_val, label="Validation Loss")
-    plt.xlabel("Step")
-    plt.ylabel("Loss")
-    plt.legend()
-    plt.savefig("loss_curves.png")
+    ## plot the training and validation loss curves
+    plot_loss_curves(losses_train, losses_val)
 
 
 # %%
